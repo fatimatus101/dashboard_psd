@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Dashboard Simulasi Antrean Telemedicine</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F0EEE9;--surface:#FFFFFF;--s2:#E8E5DF;--s3:#DEDAD2;
+  --border:#D4D0C8;--border2:#C4C0B6;
+  --text:#1C1A17;--t2:#6A6760;--t3:#9A9790;
+  --blue:#1A5C9E;--blue-l:#E4EEF8;--blue-d:#0D3C6B;
+  --red:#B8301F;--red-l:#FBEAE8;--red-d:#7A1F14;
+  --green:#1C7539;--green-l:#E6F3EB;--green-d:#0F4A22;
+  --amber:#A85200;--amber-l:#FEF0E0;--amber-d:#6E3600;
+  --purple:#5B2D8E;--purple-l:#EFE8F8;--purple-d:#3A1A5C;
+  --r:8px;--rlg:14px;--shadow:0 1px 4px rgba(0,0,0,.08);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;padding:0 1.5rem;gap:12px;position:sticky;top:0;z-index:200;}
+.nav-icon{width:30px;height:30px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-icon svg{width:17px;height:17px;fill:white;}
+.nav-title{font-size:15px;font-weight:600;}
+.nav-sub{font-size:12px;color:var(--t3);margin-left:2px;}
+.nav-sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
+.nav-sp{flex:1;}
+.nav-chip{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:var(--blue-l);color:var(--blue-d);border:1px solid #C0D8F0;}
+.wrap{max-width:1280px;margin:0 auto;padding:1.5rem;}
+.phdr{margin-bottom:1.4rem;}
+.phdr h1{font-size:20px;font-weight:700;line-height:1.3;}
+.phdr p{font-size:13px;color:var(--t2);margin-top:3px;}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.pill{font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;background:var(--s2);color:var(--t2);border:1px solid var(--border);}
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:4px;width:fit-content;flex-wrap:wrap;margin-bottom:1.5rem;}
+.tab{padding:7px 18px;font-size:13px;font-weight:500;border-radius:9px;border:none;cursor:pointer;background:transparent;color:var(--t2);transition:all .15s;white-space:nowrap;font-family:'Inter',sans-serif;}
+.tab:hover:not(.active){background:var(--s2);}
+.tab.active{background:var(--blue);color:#fff;}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:1.4rem;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.mc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:2px 0 0 2px;}
+.mc.c-blue::before{background:var(--blue);}
+.mc.c-red::before{background:var(--red);}
+.mc.c-green::before{background:var(--green);}
+.mc.c-amber::before{background:var(--amber);}
+.mc.c-purple::before{background:var(--purple);}
+.mc .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-bottom:6px;}
+.mc .val{font-size:24px;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace;}
+.mc.c-blue .val{color:var(--blue);}
+.mc.c-red .val{color:var(--red);}
+.mc.c-green .val{color:var(--green);}
+.mc.c-amber .val{color:var(--amber);}
+.mc.c-purple .val{color:var(--purple);}
+.mc .sub{font-size:11px;color:var(--t3);margin-top:4px;}
+.sla-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:6px;margin-top:6px;}
+.sla-pass{background:var(--green-l);color:var(--green-d);border:1px solid #9ACFAE;}
+.sla-fail{background:var(--red-l);color:var(--red-d);border:1px solid #ECBAB5;}
+.sla-warn{background:var(--amber-l);color:var(--amber-d);border:1px solid #EEBF8A;}
+.banner{border-radius:var(--rlg);padding:12px 16px;margin-bottom:1.4rem;border-left:3px solid;font-size:13px;line-height:1.6;}
+.banner.danger{background:var(--red-l);border-color:var(--red);color:var(--red-d);}
+.banner.success{background:var(--green-l);border-color:var(--green);color:var(--green-d);}
+.banner.warn{background:var(--amber-l);border-color:var(--amber);color:var(--amber-d);}
+.banner strong{font-weight:700;display:block;margin-bottom:2px;font-size:14px;}
+.sr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.4rem;}
+@media(max-width:700px){.sr,.mr{grid-template-columns:1fr!important;}}
+.mr{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.4rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:16px;box-shadow:var(--shadow);}
+.card-title{font-size:13px;font-weight:700;color:var(--text);}
+.card-sub{font-size:11px;color:var(--t3);margin-top:2px;margin-bottom:12px;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:16px;box-shadow:var(--shadow);margin-bottom:1.4rem;}
+.ttbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.ttbar .ttitle{font-size:14px;font-weight:700;flex:1;min-width:160px;}
+.tinput{padding:6px 12px;font-size:12px;font-family:'Inter',sans-serif;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;width:170px;transition:border .15s;}
+.tinput:focus{border-color:var(--blue);}
+.tselect{padding:6px 10px;font-size:12px;font-family:'Inter',sans-serif;border:1px solid var(--border);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;cursor:pointer;}
+.twrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:580px;}
+thead th{background:var(--s2);color:var(--t2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;text-align:left;border-bottom:2px solid var(--border);white-space:nowrap;}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--s2);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--bg);}
+tbody tr.rdanger{background:#FFF3F2;}
+tbody tr.rdanger:hover{background:#FDECEA;}
+.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.bserved{background:var(--green-l);color:var(--green-d);}
+.bwait{background:var(--amber-l);color:var(--amber-d);}
+.bslaok{background:var(--blue-l);color:var(--blue-d);}
+.bslafail{background:var(--red-l);color:var(--red-d);}
+.mono{font-family:'JetBrains Mono',monospace;}
+.wbar{display:flex;align-items:center;gap:6px;}
+.wbg{height:4px;background:var(--s3);border-radius:2px;flex:1;min-width:36px;}
+.wfill{height:4px;border-radius:2px;}
+.pag{display:flex;gap:4px;justify-content:flex-end;margin-top:12px;align-items:center;flex-wrap:wrap;}
+.pinfo{font-size:11px;color:var(--t3);margin-right:auto;}
+.pbtn{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:all .12s;font-family:'Inter',sans-serif;}
+.pbtn:hover{background:var(--s2);}
+.pbtn.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:600;}
+.statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0;}
+.sbox{background:var(--s2);border-radius:var(--r);padding:10px 12px;}
+.sbox .sl{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+.sbox .sv{font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.sbox.blue .sv{color:var(--blue);}
+.sbox.red .sv{color:var(--red);}
+.sbox.green .sv{color:var(--green);}
+.sbox.amber .sv{color:var(--amber);}
+.cmptbl table{min-width:300px;}
+.hidden{display:none!important;}
+.sla-line-label{font-size:10px;fill:var(--red);}
+.datasrc{font-size:10.5px;color:var(--t3);margin-top:-6px;margin-bottom:1.2rem;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-icon">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm1 3h-2V9h2v3z"/></svg>
+  </div>
+  <span class="nav-title">TeleMed Queue Simulator</span>
+  <div class="nav-sep"></div>
+  <span class="nav-sub">Simulasi Antrean Digital</span>
+  <div class="nav-sp"></div>
+</nav>
+
+<div class="wrap">
+
+  <div class="phdr">
+    <h1>Simulasi Antrean Digital &mdash; Layanan Konsultasi Medis Online (Telemedicine)</h1>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('s8')"> Skenario 1 &mdash; 8 Dokter</button>
+    <button class="tab" onclick="setTab('s15')">Skenario 2 &mdash; 15 Dokter (Optimal)</button>
+    <button class="tab" onclick="setTab('mc8')"> Monte Carlo &mdash; 8 Dokter (1000 Iterasi)</button>
+    <button class="tab" onclick="setTab('mc15')">Monte Carlo &mdash; 15 Dokter (1000 Iterasi)</button>
+    <button class="tab" onclick="setTab('cmp')"> Perbandingan</button>
+  </div>
+
+  <!-- S8 -->
+  <div id="s8">
+    <div class="mg">
+      <div class="mc c-blue"><div class="lbl">Total Pasien</div><div class="val">131</div><div class="sub">masuk ke sistem</div></div>
+      <div class="mc c-blue"><div class="lbl">Jumlah Dokter</div><div class="val">8</div><div class="sub">standby aktif</div></div>
+      <div class="mc c-red"><div class="lbl">Rata-rata Tunggu</div><div class="val">26.31</div><div class="sub"> melebihi batas SLA yang ditentukan</div></div>
+      <div class="mc c-red"><div class="lbl">Tunggu Maksimal</div><div class="val">59.17</div><div class="sub">terjadi pada Pasien #129</div></div>
+      <div class="mc c-green"><div class="lbl">Tunggu Minimal</div><div class="val">0.00</div><div class="sub">terjadi pada Pasien #1&ndash;8</div></div>
+      <div class="mc c-red"><div class="lbl">Pasien &gt; 5 Menit</div><div class="val">119</div><div class="sub">dari 131 pasien (90.8%)</div></div>
+      <div class="mc c-red"><div class="lbl">% Gagal SLA</div><div class="val">90.8%</div><div class="sub">jauh melampaui toleransi</div><div class="sub">&rho; &ge; 1 &mdash; overloaded</div></div>
+    </div>
+    <div class="sr">
+      <div class="card">
+        <div class="card-title">Waktu Tunggu per Pasien &mdash; Bar Chart</div>
+        <div class="card-sub">Kenaikan mulai pasien ke-9, meledak dari pasien ke-40 (data DES asli)</div>
+        <div class="legend">
+          <span class="leg"><span class="leg-dot" style="background:#1A5C9E"></span>&le; 5 mnt (SLA OK)</span>
+          <span class="leg"><span class="leg-dot" style="background:#B8301F"></span>&gt; 5 mnt (Gagal SLA)</span>
+          <span class="leg"><span class="leg-dot" style="background:#F59E0B;border:1px dashed #999"></span>Garis SLA 5 mnt</span>
+        </div>
+        <div style="position:relative;height:230px"><canvas id="c8bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pola Antrean &mdash; Scatter Plot</div>
+        <div class="card-sub">Tren naik tajam, tidak ada fase pemulihan &mdash; sistem jenuh</div>
+        <div class="legend">
+          <span class="leg"><span class="leg-dot" style="background:#B8301F;border-radius:50%"></span>Waktu tunggu per pasien</span>
+        </div>
+        <div style="position:relative;height:230px"><canvas id="c8sct"></canvas></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="ttbar">
+        <span class="ttitle">Data Detail Pasien &mdash; Skenario 8 Dokter</span>
+        <input class="tinput" type="text" placeholder="&#128269; Cari ID pasien..." id="s8q" oninput="applyF('t8')"/>
+        <select class="tselect" id="s8f" onchange="applyF('t8')">
+          <option value="all">Semua Status</option>
+          <option value="ok">Dalam Batas SLA</option>
+          <option value="fail">Melampaui SLA</option>
+        </select>
+      </div>
+      <div class="twrap"><table><thead><tr><th>ID</th><th>Kedatangan (mnt)</th><th>Mulai Dilayani (mnt)</th><th>Tunggu (mnt)</th><th>Keterangan</th><th>Status SLA</th></tr></thead><tbody id="tb8"></tbody></table></div>
+      <div class="pag" id="pg8"></div>
+    </div>
+  </div>
+
+  <!-- S15 -->
+  <div id="s15" class="hidden">
+    <div class="mg">
+      <div class="mc c-blue"><div class="lbl">Total Pasien</div><div class="val">101</div><div class="sub">masuk ke sistem</div></div>
+      <div class="mc c-blue"><div class="lbl">Jumlah Dokter</div><div class="val">15</div><div class="sub">standby aktif</div></div>
+      <div class="mc c-green"><div class="lbl">Rata-rata Tunggu</div><div class="val">0.35</div><div class="sub"> tidak melebihi batas SLA</div></div>
+      <div class="mc c-amber"><div class="lbl">Tunggu Maksimal</div><div class="val">4.70</div><div class="sub">terjadi pada Pasien #29</div></div>
+      <div class="mc c-green"><div class="lbl">Tunggu Minimal</div><div class="val">0.00</div><div class="sub"> mayoritas pasien</div></div>
+      <div class="mc c-green"><div class="lbl">Pasien &gt; 5 Menit</div><div class="val">0</div><div class="sub">dari 101 pasien (0.0%)</div></div>
+      <div class="mc c-green"><div class="lbl">% Gagal SLA</div><div class="val">0.0%</div><div class="sub">tidak melebihi ambang batas sehingga &#10003; LULUS SLA</div><div class="sub">&rho; &lt; 1 &mdash; stabil</div></div>
+    </div>
+    <div class="sr">
+      <div class="card">
+        <div class="card-title">Waktu Tunggu per Pasien &mdash; Bar Chart</div>
+        <div class="card-sub">Mayoritas 0 menit, dua gelombang kecil di sekitar pasien 27&ndash;33 dan 77&ndash;83</div>
+        <div class="legend">
+          <span class="leg"><span class="leg-dot" style="background:#1C7539"></span>0 menit</span>
+          <span class="leg"><span class="leg-dot" style="background:#A85200"></span>0&ndash;5 menit</span>
+          <span class="leg"><span class="leg-dot" style="background:#B8301F"></span>&gt;5 menit</span>
+        </div>
+        <div style="position:relative;height:230px"><canvas id="c15bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Pola Antrean &mdash; Scatter Plot</div>
+        <div class="card-sub">Sistem stabil &mdash; recovery cepat setelah tiap lonjakan kecil</div>
+        <div class="legend">
+          <span class="leg"><span class="leg-dot" style="background:#1C7539;border-radius:50%"></span>Waktu tunggu per pasien</span>
+        </div>
+        <div style="position:relative;height:230px"><canvas id="c15sct"></canvas></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="ttbar">
+        <span class="ttitle">Data Detail Pasien &mdash; Skenario 15 Dokter</span>
+        <input class="tinput" type="text" placeholder="&#128269; Cari ID pasien..." id="s15q" oninput="applyF('t15')"/>
+        <select class="tselect" id="s15f" onchange="applyF('t15')">
+          <option value="all">Semua Status</option>
+          <option value="ok">Dalam Batas SLA</option>
+          <option value="fail">Melampaui SLA</option>
+        </select>
+      </div>
+      <div class="twrap"><table><thead><tr><th>ID</th><th>Kedatangan (mnt)</th><th>Mulai Dilayani (mnt)</th><th>Tunggu (mnt)</th><th>Keterangan</th><th>Status SLA</th></tr></thead><tbody id="tb15"></tbody></table></div>
+      <div class="pag" id="pg15"></div>
+    </div>
+  </div>
+
+  <!-- MC8 -->
+  <div id="mc8" class="hidden">
+    <div class="banner danger">
+      <strong>Monte Carlo 8 Dokter &mdash; Risiko Gagal SLA: 100.0%</strong>
+      Dari 1000 iterasi, 1000 iterasi (100.0%) menghasilkan waktu tunggu maksimal di atas 5 menit. Distribusi menyebar luas antara 8.31&ndash;111.28 menit dengan modus di rentang 40&ndash;60 menit, membuktikan kegagalan sistematis skenario 8 dokter.
+    </div>
+    <div class="statrow">
+      <div class="sbox red"><div class="sl">Rata-rata Max</div><div class="sv">51.72 mnt</div></div>
+      <div class="sbox red"><div class="sl">Median Max</div><div class="sv">51.05 mnt</div></div>
+      <div class="sbox green"><div class="sl">Min Tercatat</div><div class="sv">8.31 mnt</div></div>
+      <div class="sbox red"><div class="sl">Max Tercatat</div><div class="sv">111.28 mnt</div></div>
+      <div class="sbox red"><div class="sl">Iterasi Gagal SLA</div><div class="sv">1000 / 1000</div></div>
+      <div class="sbox red"><div class="sl">% Risiko Gagal</div><div class="sv">100.0%</div></div>
+    </div>
+    <div class="sr">
+      <div class="card">
+        <div class="card-title">Histogram Distribusi Max Tunggu &mdash; 8 Dokter</div>
+        <div class="card-sub">Seluruh 1000 iterasi berada di atas ambang SLA 5 menit</div>
+        <div style="position:relative;height:260px"><canvas id="cmc8hist"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tren Max Tunggu per Iterasi &mdash; 8 Dokter</div>
+        <div class="card-sub">Variabilitas acak tinggi di setiap run (8.31&ndash;111.28 menit)</div>
+        <div style="position:relative;height:260px"><canvas id="cmc8line"></canvas></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="ttbar">
+        <span class="ttitle">Tabel 1000 Iterasi &mdash; Skenario 8 Dokter</span>
+        <input class="tinput" type="text" placeholder="&#128269; Cari iterasi..." id="mc8q" oninput="applyF('tmc8')"/>
+        <select class="tselect" id="mc8f" onchange="applyF('tmc8')">
+          <option value="all">Semua</option>
+          <option value="ok">Lulus SLA (&le;5 mnt)</option>
+          <option value="fail">Gagal SLA (&gt;5 mnt)</option>
+        </select>
+      </div>
+      <div class="twrap"><table><thead><tr><th>Iterasi ke-</th><th>Max Tunggu 8 Dokter (mnt)</th><th>Status SLA</th><th>Selisih dari Batas (mnt)</th></tr></thead><tbody id="tbmc8"></tbody></table></div>
+      <div class="pag" id="pgmc8"></div>
+    </div>
+  </div>
+
+  <!-- MC15 -->
+  <div id="mc15" class="hidden">
+    <div class="banner warn">
+      <strong>Monte Carlo 15 Dokter &mdash; Risiko Gagal SLA: 14.3%</strong>
+      Dari 1000 iterasi, 143 iterasi (14.3%) menghasilkan waktu tunggu maksimal di atas 5 menit &mdash;  dan sekitar 857 iterasi (85.7%) berhasil mempertahankan SLA.
+    </div>
+    <div class="statrow">
+      <div class="sbox green"><div class="sl">Rata-rata Max</div><div class="sv">2.47 mnt</div></div>
+      <div class="sbox green"><div class="sl">Median Max</div><div class="sv">2.13 mnt</div></div>
+      <div class="sbox green"><div class="sl">Min Tercatat</div><div class="sv">0.00 mnt</div></div>
+      <div class="sbox amber"><div class="sl">Max Tercatat</div><div class="sv">12.13 mnt</div></div>
+      <div class="sbox green"><div class="sl">Iterasi Lulus SLA</div><div class="sv">857 / 1000</div></div>
+      <div class="sbox amber"><div class="sl">% Risiko Gagal</div><div class="sv">14.3%</div></div>
+    </div>
+    <div class="sr">
+      <div class="card">
+        <div class="card-title">Histogram Distribusi Max Tunggu &mdash; 15 Dokter</div>
+        <div style="position:relative;height:260px"><canvas id="cmc15hist"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tren Max Tunggu per Iterasi &mdash; 15 Dokter</div>
+        <div style="position:relative;height:260px"><canvas id="cmc15line"></canvas></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="ttbar">
+        <span class="ttitle">Tabel 1000 Iterasi &mdash; Skenario 15 Dokter</span>
+        <input class="tinput" type="text" placeholder="&#128269; Cari iterasi..." id="mc15q" oninput="applyF('tmc15')"/>
+        <select class="tselect" id="mc15f" onchange="applyF('tmc15')">
+          <option value="all">Semua</option>
+          <option value="ok">Lulus SLA (&le;5 mnt)</option>
+          <option value="fail">Gagal SLA (&gt;5 mnt)</option>
+        </select>
+      </div>
+      <div class="twrap"><table><thead><tr><th>Iterasi ke-</th><th>Max Tunggu 15 Dokter (mnt)</th><th>Status SLA</th><th>Selisih dari Batas (mnt)</th></tr></thead><tbody id="tbmc15"></tbody></table></div>
+      <div class="pag" id="pgmc15"></div>
+    </div>
+  </div>
+
+  <!-- CMP -->
+  <div id="cmp" class="hidden">
+    <div class="banner warn">
+      <strong>Perbandingan Head-to-Head: 8 Dokter vs 15 Dokter</strong>
+      Perbandingan langsung antara kedua skenario berdasarkan data simulasi DES dan 1000 iterasi Monte Carlo. Penambahan 7 dokter (dari 8 ke 15) menurunkan rata-rata waktu tunggu Monte Carlo sebesar 95.2% dan menekan risiko gagal SLA dari 100.0% menjadi 14.3%.
+    </div>
+    <div class="mg" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div class="mc c-red"><div class="lbl">Avg Max Tunggu (MC)</div><div class="val">51.72</div><div class="sub">menit &mdash; 8 Dokter</div></div>
+      <div class="mc c-green"><div class="lbl">Avg Max Tunggu (MC)</div><div class="val">2.47</div><div class="sub">menit &mdash; 15 Dokter</div></div>
+      <div class="mc c-red"><div class="lbl">Risiko Gagal SLA</div><div class="val">100.0%</div><div class="sub">8 Dokter &mdash; 1000/1000</div></div>
+      <div class="mc c-amber"><div class="lbl">Risiko Gagal SLA</div><div class="val">14.3%</div><div class="sub">15 Dokter &mdash; 143/1000</div></div>
+      <div class="mc c-purple"><div class="lbl">Penurunan Avg Tunggu (MC)</div><div class="val">95.2%</div><div class="sub">dari 51.72 &rarr; 2.47 mnt</div></div>
+      <div class="mc c-purple"><div class="lbl">Penurunan Risiko Gagal</div><div class="val">85.7%</div><div class="sub">dari 100.0% &rarr; 14.3%</div></div>
+    </div>
+    <div class="sr">
+      <div class="card">
+        <div class="card-title">Perbandingan Rata-rata Waktu Tunggu (DES)</div>
+        <div class="card-sub">8 Dok vs 15 Dok vs Ambang SLA 5 menit</div>
+        <div style="position:relative;height:240px"><canvas id="ccmpavg"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Perbandingan Utilisasi Server (&rho;)</div>
+        <div class="card-sub">&rho; = &lambda; / (c &times; &mu;) &mdash; nilai &lt;1 berarti sistem stabil</div>
+        <div style="position:relative;height:240px"><canvas id="ccmprho"></canvas></div>
+      </div>
+    </div>
+    <div class="mr">
+      <div class="card">
+        <div class="card-title">Distribusi Max Tunggu Monte Carlo &mdash; 8 Dokter (Merah) vs 15 Dokter (Hijau)</div>
+        <div class="card-sub">Histogram kedua skenario pada rentang 0&ndash;10+ menit (skala berbeda dijelaskan pada legenda)</div>
+        <div style="position:relative;height:270px"><canvas id="ccmpoverlap"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">% Iterasi Lulus vs Gagal SLA</div>
+        <div class="card-sub">Proporsi keberhasilan mempertahankan SLA dari 1000 iterasi</div>
+        <div style="position:relative;height:270px"><canvas id="ccmppie"></canvas></div>
+      </div>
+    </div>
+    <div class="tcard cmptbl">
+      <div class="ttbar"><span class="ttitle">Ringkasan Statistik Perbandingan</span></div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th>Metrik</th><th>8 Dokter</th><th>15 Dokter</th><th>Selisih</th><th>Perbaikan</th></tr></thead>
+          <tbody>
+            <tr><td>Rata-rata Waktu Tunggu (DES)</td><td class="mono" style="color:#B8301F;font-weight:600">26.31 mnt</td><td class="mono" style="color:#1C7539;font-weight:600">0.35 mnt</td><td class="mono">&minus;25.96 mnt</td><td><span class="badge bserved">98.69% lebih baik</span></td></tr>
+            <tr><td>Max Waktu Tunggu (DES)</td><td class="mono" style="color:#B8301F;font-weight:600">59.17 mnt</td><td class="mono" style="color:#A85200;font-weight:600">4.70 mnt</td><td class="mono">&minus;54.47 mnt</td><td><span class="badge bserved">92.06% lebih baik</span></td></tr>
+            <tr><td>Avg Max Tunggu (Monte Carlo)</td><td class="mono" style="color:#B8301F;font-weight:600">51.72 mnt</td><td class="mono" style="color:#1C7539;font-weight:600">2.47 mnt</td><td class="mono">&minus;49.26 mnt</td><td><span class="badge bserved">95.23% lebih baik</span></td></tr>
+            <tr><td>Max Tunggu Tertinggi (MC)</td><td class="mono" style="color:#B8301F;font-weight:600">111.28 mnt</td><td class="mono" style="color:#A85200;font-weight:600">12.13 mnt</td><td class="mono">&minus;99.15 mnt</td><td><span class="badge bserved">89.10% lebih baik</span></td></tr>
+            <tr><td>Risiko Gagal SLA (MC 1000 iter)</td><td class="mono" style="color:#B8301F;font-weight:600">100.0% (1000/1000)</td><td class="mono" style="color:#A85200;font-weight:600">14.3% (143/1000)</td><td class="mono">&minus;85.7%</td><td><span class="badge bslaok">85.7% lebih aman</span></td></tr>
+            <tr><td>Utilisasi Server &rho;</td><td class="mono" style="color:#B8301F;font-weight:600">1.25 (overloaded)</td><td class="mono" style="color:#1C7539;font-weight:600">0.67 (stabil)</td><td>&mdash;</td><td><span class="badge bserved">Sistem stabil</span></td></tr>
+            <tr><td>Status SLA (DES)</td><td><span class="badge bslafail">GAGAL</span></td><td><span class="badge bslaok">LULUS</span></td><td>&mdash;</td><td><span class="badge bserved">Rekomendasi: 15 Dokter</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="datasrc">Sumber data: skenario_1_8_dokter.csv, skenario_2_15_dokter.csv, hasil_1000_monte_carlo.csv</div>
+    </div>
+  </div>
+</div><!-- /wrap -->
+
+<script>
+// ── DATA (dimuat langsung dari file CSV hasil simulasi asli) ──────────
+const P8 = [{"id":1,"arr":1.53,"svc":1.53,"wait":0.0},{"id":2,"arr":1.57,"svc":1.57,"wait":0.0},{"id":3,"arr":3.57,"svc":3.57,"wait":0.0},{"id":4,"arr":3.7,"svc":3.7,"wait":0.0},{"id":5,"arr":4.07,"svc":4.07,"wait":0.0},{"id":6,"arr":4.41,"svc":4.41,"wait":0.0},{"id":7,"arr":4.78,"svc":4.78,"wait":0.0},{"id":8,"arr":4.79,"svc":4.79,"wait":0.0},{"id":9,"arr":5.41,"svc":15.54,"wait":10.12},{"id":10,"arr":5.57,"svc":18.29,"wait":12.73},{"id":11,"arr":8.39,"svc":18.72,"wait":10.34},{"id":12,"arr":9.78,"svc":19.17,"wait":9.4},{"id":13,"arr":12.25,"svc":20.21,"wait":7.96},{"id":14,"arr":14.21,"svc":21.01,"wait":6.81},{"id":15,"arr":15.36,"svc":22.19,"wait":6.83},{"id":16,"arr":20.78,"svc":23.26,"wait":2.47},{"id":17,"arr":20.91,"svc":29.61,"wait":8.7},{"id":18,"arr":21.31,"svc":33.89,"wait":12.58},{"id":19,"arr":22.82,"svc":34.12,"wait":11.3},{"id":20,"arr":23.17,"svc":34.91,"wait":11.73},{"id":21,"arr":23.64,"svc":36.26,"wait":12.62},{"id":22,"arr":25.6,"svc":36.45,"wait":10.86},{"id":23,"arr":25.87,"svc":36.66,"wait":10.79},{"id":24,"arr":26.58,"svc":38.71,"wait":12.13},{"id":25,"arr":33.42,"svc":45.69,"wait":12.27},{"id":26,"arr":35.15,"svc":48.03,"wait":12.88},{"id":27,"arr":38.84,"svc":49.47,"wait":10.63},{"id":28,"arr":39.21,"svc":49.7,"wait":10.49},{"id":29,"arr":48.22,"svc":50.79,"wait":2.57},{"id":30,"arr":49.04,"svc":51.0,"wait":1.96},{"id":31,"arr":49.14,"svc":51.06,"wait":1.92},{"id":32,"arr":49.86,"svc":55.98,"wait":6.12},{"id":33,"arr":50.04,"svc":60.73,"wait":10.68},{"id":34,"arr":50.9,"svc":62.35,"wait":11.46},{"id":35,"arr":54.03,"svc":62.47,"wait":8.45},{"id":36,"arr":55.56,"svc":64.38,"wait":8.82},{"id":37,"arr":56.96,"svc":65.13,"wait":8.17},{"id":38,"arr":58.1,"svc":65.82,"wait":7.72},{"id":39,"arr":58.1,"svc":67.88,"wait":9.78},{"id":40,"arr":58.69,"svc":71.59,"wait":12.91},{"id":41,"arr":58.72,"svc":74.59,"wait":15.87},{"id":42,"arr":62.68,"svc":75.03,"wait":12.34},{"id":43,"arr":63.65,"svc":78.52,"wait":14.87},{"id":44,"arr":64.85,"svc":79.04,"wait":14.19},{"id":45,"arr":66.01,"svc":81.12,"wait":15.11},{"id":46,"arr":67.11,"svc":81.73,"wait":14.63},{"id":47,"arr":67.3,"svc":83.27,"wait":15.97},{"id":48,"arr":67.68,"svc":83.88,"wait":16.2},{"id":49,"arr":68.3,"svc":91.74,"wait":23.44},{"id":50,"arr":68.67,"svc":92.13,"wait":23.46},{"id":51,"arr":68.78,"svc":93.07,"wait":24.29},{"id":52,"arr":70.28,"svc":95.1,"wait":24.82},{"id":53,"arr":70.67,"svc":95.67,"wait":25.0},{"id":54,"arr":74.21,"svc":95.92,"wait":21.72},{"id":55,"arr":74.57,"svc":97.86,"wait":23.3},{"id":56,"arr":74.78,"svc":97.96,"wait":23.18},{"id":57,"arr":75.74,"svc":106.37,"wait":30.63},{"id":58,"arr":76.06,"svc":106.43,"wait":30.37},{"id":59,"arr":76.21,"svc":106.92,"wait":30.71},{"id":60,"arr":77.06,"svc":108.57,"wait":31.51},{"id":61,"arr":77.88,"svc":110.4,"wait":32.52},{"id":62,"arr":78.83,"svc":111.18,"wait":32.35},{"id":63,"arr":85.05,"svc":111.6,"wait":26.56},{"id":64,"arr":88.9,"svc":113.54,"wait":24.64},{"id":65,"arr":89.77,"svc":118.71,"wait":28.93},{"id":66,"arr":92.74,"svc":119.77,"wait":27.03},{"id":67,"arr":93.74,"svc":122.22,"wait":28.48},{"id":68,"arr":93.83,"svc":122.6,"wait":28.78},{"id":69,"arr":94.54,"svc":124.27,"wait":29.73},{"id":70,"arr":100.87,"svc":125.52,"wait":24.64},{"id":71,"arr":100.96,"svc":125.83,"wait":24.87},{"id":72,"arr":102.28,"svc":126.6,"wait":24.32},{"id":73,"arr":103.32,"svc":132.37,"wait":29.04},{"id":74,"arr":106.2,"svc":135.56,"wait":29.36},{"id":75,"arr":106.45,"svc":136.83,"wait":30.38},{"id":76,"arr":106.65,"svc":139.02,"wait":32.37},{"id":77,"arr":109.96,"svc":139.17,"wait":29.21},{"id":78,"arr":111.27,"svc":139.52,"wait":28.25},{"id":79,"arr":111.68,"svc":141.45,"wait":29.77},{"id":80,"arr":112.22,"svc":141.46,"wait":29.24},{"id":81,"arr":112.79,"svc":147.68,"wait":34.89},{"id":82,"arr":114.88,"svc":153.21,"wait":38.33},{"id":83,"arr":124.59,"svc":153.61,"wait":29.02},{"id":84,"arr":125.98,"svc":153.68,"wait":27.69},{"id":85,"arr":126.99,"svc":154.58,"wait":27.6},{"id":86,"arr":127.47,"svc":155.75,"wait":28.28},{"id":87,"arr":127.48,"svc":157.56,"wait":30.08},{"id":88,"arr":129.69,"svc":157.91,"wait":28.22},{"id":89,"arr":131.21,"svc":164.69,"wait":33.48},{"id":90,"arr":131.67,"svc":167.21,"wait":35.54},{"id":91,"arr":133.69,"svc":169.12,"wait":35.43},{"id":92,"arr":133.71,"svc":169.42,"wait":35.71},{"id":93,"arr":133.83,"svc":170.02,"wait":36.19},{"id":94,"arr":137.05,"svc":170.44,"wait":33.39},{"id":95,"arr":137.29,"svc":170.84,"wait":33.55},{"id":96,"arr":137.49,"svc":171.63,"wait":34.14},{"id":97,"arr":138.04,"svc":180.86,"wait":42.82},{"id":98,"arr":141.48,"svc":181.36,"wait":39.88},{"id":99,"arr":144.57,"svc":182.21,"wait":37.64},{"id":100,"arr":147.5,"svc":183.31,"wait":35.81},{"id":101,"arr":147.88,"svc":184.54,"wait":36.66},{"id":102,"arr":148.42,"svc":185.12,"wait":36.7},{"id":103,"arr":150.8,"svc":185.2,"wait":34.4},{"id":104,"arr":151.19,"svc":189.43,"wait":38.24},{"id":105,"arr":151.23,"svc":193.42,"wait":42.19},{"id":106,"arr":151.55,"svc":197.08,"wait":45.53},{"id":107,"arr":152.15,"svc":197.7,"wait":45.55},{"id":108,"arr":155.14,"svc":197.89,"wait":42.75},{"id":109,"arr":157.1,"svc":198.36,"wait":41.26},{"id":110,"arr":158.17,"svc":199.55,"wait":41.38},{"id":111,"arr":158.18,"svc":200.94,"wait":42.77},{"id":112,"arr":162.07,"svc":204.98,"wait":42.91},{"id":113,"arr":163.23,"svc":209.53,"wait":46.3},{"id":114,"arr":165.14,"svc":209.75,"wait":44.61},{"id":115,"arr":165.82,"svc":212.5,"wait":46.68},{"id":116,"arr":165.93,"svc":212.58,"wait":46.66},{"id":117,"arr":167.56,"svc":213.74,"wait":46.17},{"id":118,"arr":170.39,"svc":216.62,"wait":46.23},{"id":119,"arr":170.59,"svc":218.14,"wait":47.55},{"id":120,"arr":172.29,"svc":223.09,"wait":50.8},{"id":121,"arr":172.29,"svc":224.85,"wait":52.56},{"id":122,"arr":172.8,"svc":225.91,"wait":53.11},{"id":123,"arr":173.64,"svc":227.64,"wait":54.0},{"id":124,"arr":174.94,"svc":229.1,"wait":54.15},{"id":125,"arr":176.54,"svc":229.17,"wait":52.64},{"id":126,"arr":177.48,"svc":233.34,"wait":55.86},{"id":127,"arr":178.35,"svc":233.64,"wait":55.29},{"id":128,"arr":178.71,"svc":237.26,"wait":58.54},{"id":129,"arr":179.67,"svc":238.84,"wait":59.17},{"id":130,"arr":183.15,"svc":239.56,"wait":56.42},{"id":131,"arr":185.7,"svc":241.02,"wait":55.32}];
+const P15 = [{"id":1,"arr":1.53,"svc":1.53,"wait":0.0},{"id":2,"arr":1.57,"svc":1.57,"wait":0.0},{"id":3,"arr":3.57,"svc":3.57,"wait":0.0},{"id":4,"arr":3.7,"svc":3.7,"wait":0.0},{"id":5,"arr":4.07,"svc":4.07,"wait":0.0},{"id":6,"arr":4.41,"svc":4.41,"wait":0.0},{"id":7,"arr":4.78,"svc":4.78,"wait":0.0},{"id":8,"arr":4.79,"svc":4.79,"wait":0.0},{"id":9,"arr":5.41,"svc":5.41,"wait":0.0},{"id":10,"arr":5.57,"svc":5.57,"wait":0.0},{"id":11,"arr":8.04,"svc":8.04,"wait":0.0},{"id":12,"arr":13.46,"svc":13.46,"wait":0.0},{"id":13,"arr":16.11,"svc":16.11,"wait":0.0},{"id":14,"arr":17.4,"svc":17.4,"wait":0.0},{"id":15,"arr":17.79,"svc":17.79,"wait":0.0},{"id":16,"arr":18.19,"svc":18.19,"wait":0.0},{"id":17,"arr":19.7,"svc":19.7,"wait":0.0},{"id":18,"arr":20.06,"svc":20.06,"wait":0.0},{"id":19,"arr":20.34,"svc":20.34,"wait":0.0},{"id":20,"arr":21.05,"svc":21.05,"wait":0.0},{"id":21,"arr":23.83,"svc":23.83,"wait":0.0},{"id":22,"arr":23.88,"svc":23.88,"wait":0.0},{"id":23,"arr":24.23,"svc":24.23,"wait":0.0},{"id":24,"arr":24.99,"svc":24.99,"wait":0.0},{"id":25,"arr":25.45,"svc":25.45,"wait":0.0},{"id":26,"arr":25.91,"svc":25.91,"wait":0.0},{"id":27,"arr":26.67,"svc":30.9,"wait":4.22},{"id":28,"arr":26.75,"svc":31.4,"wait":4.65},{"id":29,"arr":26.92,"svc":31.62,"wait":4.7},{"id":30,"arr":28.4,"svc":31.85,"wait":3.45},{"id":31,"arr":30.76,"svc":32.45,"wait":1.7},{"id":32,"arr":31.58,"svc":35.96,"wait":4.38},{"id":33,"arr":32.05,"svc":36.0,"wait":3.95},{"id":34,"arr":36.66,"svc":36.66,"wait":0.0},{"id":35,"arr":38.07,"svc":38.07,"wait":0.0},{"id":36,"arr":39.2,"svc":39.2,"wait":0.0},{"id":37,"arr":42.36,"svc":42.36,"wait":0.0},{"id":38,"arr":44.5,"svc":44.5,"wait":0.0},{"id":39,"arr":45.47,"svc":45.47,"wait":0.0},{"id":40,"arr":48.56,"svc":48.56,"wait":0.0},{"id":41,"arr":49.72,"svc":49.72,"wait":0.0},{"id":42,"arr":50.28,"svc":50.28,"wait":0.0},{"id":43,"arr":50.47,"svc":50.47,"wait":0.0},{"id":44,"arr":51.8,"svc":51.8,"wait":0.0},{"id":45,"arr":51.91,"svc":51.91,"wait":0.0},{"id":46,"arr":55.45,"svc":55.45,"wait":0.0},{"id":47,"arr":55.81,"svc":55.81,"wait":0.0},{"id":48,"arr":58.12,"svc":58.12,"wait":0.0},{"id":49,"arr":58.27,"svc":58.27,"wait":0.0},{"id":50,"arr":59.21,"svc":59.21,"wait":0.0},{"id":51,"arr":65.43,"svc":65.43,"wait":0.0},{"id":52,"arr":66.05,"svc":66.05,"wait":0.0},{"id":53,"arr":66.37,"svc":66.37,"wait":0.0},{"id":54,"arr":66.86,"svc":66.86,"wait":0.0},{"id":55,"arr":68.06,"svc":68.06,"wait":0.0},{"id":56,"arr":68.42,"svc":68.42,"wait":0.0},{"id":57,"arr":69.13,"svc":69.13,"wait":0.0},{"id":58,"arr":69.96,"svc":69.96,"wait":0.0},{"id":59,"arr":70.21,"svc":70.21,"wait":0.0},{"id":60,"arr":72.28,"svc":72.28,"wait":0.0},{"id":61,"arr":73.33,"svc":73.33,"wait":0.0},{"id":62,"arr":78.18,"svc":78.18,"wait":0.0},{"id":63,"arr":79.54,"svc":79.54,"wait":0.0},{"id":64,"arr":79.73,"svc":79.73,"wait":0.0},{"id":65,"arr":81.09,"svc":81.09,"wait":0.0},{"id":66,"arr":82.4,"svc":82.4,"wait":0.0},{"id":67,"arr":82.74,"svc":82.74,"wait":0.0},{"id":68,"arr":83.5,"svc":83.5,"wait":0.0},{"id":69,"arr":84.07,"svc":84.07,"wait":0.0},{"id":70,"arr":84.99,"svc":84.99,"wait":0.0},{"id":71,"arr":85.45,"svc":85.45,"wait":0.0},{"id":72,"arr":85.71,"svc":85.71,"wait":0.0},{"id":73,"arr":87.13,"svc":87.13,"wait":0.0},{"id":74,"arr":91.32,"svc":91.32,"wait":0.0},{"id":75,"arr":91.8,"svc":91.8,"wait":0.0},{"id":76,"arr":92.14,"svc":92.14,"wait":0.0},{"id":77,"arr":93.14,"svc":93.97,"wait":0.83},{"id":78,"arr":93.63,"svc":95.44,"wait":1.81},{"id":79,"arr":93.64,"svc":96.32,"wait":2.68},{"id":80,"arr":95.85,"svc":97.21,"wait":1.36},{"id":81,"arr":96.68,"svc":97.28,"wait":0.6},{"id":82,"arr":98.0,"svc":98.37,"wait":0.38},{"id":83,"arr":98.43,"svc":98.58,"wait":0.16},{"id":84,"arr":99.88,"svc":99.88,"wait":0.0},{"id":85,"arr":102.2,"svc":102.2,"wait":0.0},{"id":86,"arr":104.75,"svc":104.75,"wait":0.0},{"id":87,"arr":107.13,"svc":107.13,"wait":0.0},{"id":88,"arr":110.12,"svc":110.12,"wait":0.0},{"id":89,"arr":111.66,"svc":111.66,"wait":0.0},{"id":90,"arr":111.84,"svc":111.84,"wait":0.0},{"id":91,"arr":112.02,"svc":112.02,"wait":0.0},{"id":92,"arr":112.58,"svc":112.58,"wait":0.0},{"id":93,"arr":113.31,"svc":113.31,"wait":0.0},{"id":94,"arr":115.16,"svc":115.16,"wait":0.0},{"id":95,"arr":117.19,"svc":117.19,"wait":0.0},{"id":96,"arr":117.3,"svc":117.3,"wait":0.0},{"id":97,"arr":117.87,"svc":117.87,"wait":0.0},{"id":98,"arr":118.4,"svc":118.4,"wait":0.0},{"id":99,"arr":119.18,"svc":119.18,"wait":0.0},{"id":100,"arr":119.99,"svc":119.99,"wait":0.0},{"id":101,"arr":120.53,"svc":120.53,"wait":0.0}];
+const MC_DATA = [[1,35.47,4.04],[2,32.01,3.32],[3,30.77,0.0],[4,52.32,2.52],[5,56.06,1.11],[6,51.06,7.3],[7,44.52,2.58],[8,41.73,7.14],[9,40.64,2.4],[10,61.62,0.0],[11,58.71,1.53],[12,38.21,0.39],[13,47.03,1.44],[14,53.21,5.29],[15,37.88,5.49],[16,38.23,2.69],[17,56.62,1.23],[18,52.11,2.47],[19,41.59,2.35],[20,32.41,1.23],[21,70.22,6.95],[22,61.7,0.26],[23,70.37,0.0],[24,33.91,0.7],[25,77.04,1.31],[26,71.68,1.52],[27,71.41,6.63],[28,31.43,5.62],[29,41.36,0.59],[30,50.84,2.03],[31,74.25,1.47],[32,57.35,0.1],[33,64.61,1.22],[34,50.72,3.22],[35,52.55,0.73],[36,64.84,7.38],[37,49.84,1.17],[38,19.41,2.03],[39,29.36,2.38],[40,31.47,2.48],[41,22.66,1.48],[42,61.65,7.13],[43,73.32,5.0],[44,21.99,2.82],[45,43.97,4.03],[46,25.9,2.6],[47,11.56,0.0],[48,33.72,2.52],[49,44.39,0.06],[50,19.97,1.85],[51,41.8,2.83],[52,35.7,0.0],[53,17.61,0.49],[54,34.03,0.14],[55,85.75,3.69],[56,58.54,1.98],[57,49.48,1.93],[58,32.92,2.5],[59,64.1,0.16],[60,74.65,0.0],[61,24.57,0.0],[62,56.13,3.48],[63,27.88,0.0],[64,31.53,3.56],[65,40.36,2.16],[66,31.17,2.41],[67,47.62,2.2],[68,64.47,2.34],[69,69.71,0.01],[70,68.9,0.0],[71,69.19,4.84],[72,72.65,4.89],[73,42.58,0.0],[74,64.32,4.73],[75,63.63,4.64],[76,53.66,0.62],[77,41.25,2.92],[78,55.87,0.0],[79,46.76,3.15],[80,26.34,3.61],[81,37.93,0.78],[82,59.34,0.0],[83,21.54,6.6],[84,39.6,3.24],[85,60.06,9.88],[86,51.99,3.04],[87,20.54,5.35],[88,79.36,0.89],[89,51.28,4.08],[90,49.23,4.79],[91,36.36,2.23],[92,51.05,3.54],[93,68.02,0.0],[94,12.56,0.0],[95,60.42,4.06],[96,48.83,1.47],[97,49.23,0.0],[98,60.09,1.05],[99,39.48,5.03],[100,36.77,0.27],[101,88.82,0.96],[102,28.4,5.2],[103,41.33,4.52],[104,24.57,3.66],[105,55.64,0.0],[106,72.63,7.06],[107,61.24,3.84],[108,76.35,1.47],[109,37.48,5.35],[110,34.06,6.61],[111,73.38,3.29],[112,44.31,0.0],[113,45.05,0.0],[114,28.97,3.11],[115,50.91,2.44],[116,30.24,0.0],[117,59.18,3.52],[118,39.01,5.18],[119,60.27,3.51],[120,75.73,4.1],[121,57.26,1.7],[122,87.92,0.0],[123,64.05,2.6],[124,47.83,5.12],[125,10.94,3.75],[126,47.06,3.94],[127,42.29,0.0],[128,59.16,0.51],[129,33.52,4.0],[130,30.4,3.41],[131,48.03,0.0],[132,52.4,0.47],[133,28.76,3.9],[134,89.69,0.07],[135,52.89,1.13],[136,34.34,0.0],[137,63.42,0.0],[138,44.97,2.33],[139,91.98,0.62],[140,58.79,0.83],[141,65.05,0.99],[142,50.16,0.0],[143,32.83,1.69],[144,44.39,1.84],[145,57.93,3.6],[146,56.57,0.0],[147,84.05,5.7],[148,64.21,0.25],[149,36.83,2.58],[150,56.97,1.93],[151,38.99,3.33],[152,103.61,8.18],[153,29.07,0.0],[154,95.54,3.28],[155,42.63,3.96],[156,60.37,0.97],[157,52.34,0.57],[158,56.64,2.1],[159,93.71,6.22],[160,28.32,2.13],[161,59.28,1.07],[162,43.84,2.39],[163,43.12,6.06],[164,23.78,2.98],[165,67.89,0.0],[166,34.36,12.13],[167,45.59,7.65],[168,34.8,0.38],[169,72.67,0.0],[170,75.99,3.34],[171,73.3,7.71],[172,57.87,3.02],[173,62.76,3.41],[174,76.3,1.42],[175,44.2,1.49],[176,32.65,5.09],[177,52.22,2.64],[178,41.46,3.88],[179,35.58,1.91],[180,77.45,2.13],[181,54.13,5.57],[182,43.59,2.85],[183,35.79,0.0],[184,72.36,0.39],[185,35.01,3.86],[186,51.91,1.48],[187,69.79,4.29],[188,56.84,0.0],[189,45.74,1.44],[190,58.6,0.0],[191,65.32,3.64],[192,45.94,0.0],[193,81.73,1.21],[194,75.91,2.47],[195,64.76,1.5],[196,30.99,0.32],[197,35.08,5.18],[198,47.56,2.92],[199,58.59,4.77],[200,41.07,7.46],[201,25.72,0.0],[202,60.97,0.53],[203,70.37,2.11],[204,62.87,0.0],[205,76.61,6.46],[206,26.23,0.44],[207,45.41,5.36],[208,71.23,1.48],[209,22.02,0.0],[210,55.2,7.32],[211,75.54,3.22],[212,49.31,1.53],[213,35.54,0.0],[214,57.07,5.7],[215,69.31,0.0],[216,43.46,0.41],[217,48.49,5.42],[218,59.97,2.91],[219,76.64,0.33],[220,71.49,0.98],[221,32.47,0.9],[222,32.47,2.56],[223,74.47,4.77],[224,24.75,0.0],[225,48.5,3.75],[226,60.35,1.83],[227,49.3,2.21],[228,48.03,0.0],[229,56.89,6.6],[230,53.15,1.15],[231,57.89,0.6],[232,39.8,3.4],[233,58.69,0.66],[234,46.33,0.0],[235,69.72,0.0],[236,63.16,0.2],[237,16.01,0.0],[238,77.31,3.61],[239,50.94,3.2],[240,23.76,7.19],[241,86.14,4.97],[242,60.57,1.77],[243,53.0,2.06],[244,51.77,2.01],[245,45.6,0.0],[246,43.41,0.0],[247,57.64,3.81],[248,76.67,0.0],[249,50.76,3.2],[250,49.83,2.5],[251,24.95,5.04],[252,58.85,1.48],[253,58.26,4.0],[254,48.38,6.89],[255,35.35,3.19],[256,58.78,3.81],[257,35.41,3.17],[258,17.95,6.03],[259,47.07,3.14],[260,35.48,3.46],[261,67.45,2.62],[262,24.08,0.13],[263,81.76,0.0],[264,39.2,1.53],[265,68.14,0.0],[266,44.68,3.75],[267,62.28,0.0],[268,78.05,1.12],[269,32.77,0.77],[270,59.89,2.03],[271,44.22,2.94],[272,20.97,0.0],[273,81.0,0.8],[274,55.71,1.56],[275,92.03,0.0],[276,47.99,3.32],[277,67.5,2.18],[278,34.56,3.13],[279,57.87,1.77],[280,38.0,0.28],[281,31.89,1.43],[282,50.61,3.01],[283,48.55,7.08],[284,54.24,3.86],[285,71.79,0.94],[286,88.19,0.0],[287,94.88,3.66],[288,50.52,0.0],[289,53.78,0.0],[290,34.13,6.7],[291,34.45,4.33],[292,27.05,0.2],[293,57.79,4.35],[294,57.13,0.0],[295,47.16,0.69],[296,68.17,0.0],[297,47.44,3.21],[298,60.68,0.0],[299,38.15,0.0],[300,18.34,1.17],[301,71.96,5.81],[302,35.04,0.0],[303,62.46,2.86],[304,43.86,0.0],[305,52.73,0.0],[306,70.32,0.76],[307,43.19,1.61],[308,44.04,0.64],[309,54.93,8.09],[310,49.44,1.05],[311,66.81,9.18],[312,36.17,2.23],[313,63.17,1.36],[314,51.05,4.38],[315,45.26,3.79],[316,34.27,1.29],[317,39.75,0.0],[318,53.63,8.77],[319,71.46,3.26],[320,69.55,4.11],[321,66.09,0.0],[322,46.3,0.34],[323,20.49,1.8],[324,57.84,0.69],[325,36.07,0.0],[326,61.81,6.01],[327,38.57,0.0],[328,52.03,2.96],[329,48.18,8.14],[330,53.12,0.53],[331,72.73,2.26],[332,64.0,0.49],[333,64.01,6.64],[334,59.89,0.25],[335,22.96,0.74],[336,27.83,4.7],[337,67.43,3.12],[338,44.75,4.54],[339,93.63,2.57],[340,50.62,3.3],[341,40.85,1.36],[342,74.72,0.0],[343,39.87,5.36],[344,41.56,0.84],[345,21.95,0.96],[346,66.71,2.18],[347,99.16,0.0],[348,37.69,3.27],[349,33.04,6.12],[350,46.25,0.0],[351,30.0,1.72],[352,41.95,3.33],[353,46.39,1.19],[354,64.94,9.63],[355,69.78,0.81],[356,70.38,3.52],[357,38.98,5.64],[358,33.53,5.37],[359,94.32,2.88],[360,51.25,5.48],[361,46.13,3.32],[362,81.27,2.34],[363,50.25,2.03],[364,30.6,0.0],[365,49.37,4.13],[366,39.76,0.0],[367,70.43,0.0],[368,72.96,2.78],[369,58.23,0.0],[370,84.14,0.18],[371,73.46,4.87],[372,53.17,2.85],[373,40.29,2.08],[374,36.99,1.79],[375,51.05,4.5],[376,75.81,3.64],[377,42.83,2.58],[378,63.85,4.8],[379,57.38,4.22],[380,56.04,0.57],[381,28.84,3.37],[382,43.2,2.14],[383,56.11,1.15],[384,46.59,0.58],[385,43.54,0.0],[386,46.02,0.0],[387,75.03,0.0],[388,70.74,3.8],[389,59.54,0.0],[390,69.7,3.42],[391,55.06,0.0],[392,47.0,2.38],[393,34.9,2.2],[394,40.36,3.04],[395,27.81,0.87],[396,28.06,0.0],[397,69.16,2.47],[398,19.19,2.02],[399,36.15,6.04],[400,52.49,0.0],[401,37.27,1.83],[402,73.0,5.34],[403,37.51,1.9],[404,38.91,2.27],[405,56.59,3.04],[406,27.98,2.42],[407,75.69,0.0],[408,30.28,6.23],[409,46.81,0.33],[410,62.31,0.0],[411,49.12,0.0],[412,79.79,0.0],[413,57.03,2.45],[414,80.25,0.96],[415,55.84,2.53],[416,74.53,2.97],[417,63.86,6.3],[418,64.6,4.28],[419,70.26,2.94],[420,76.5,1.17],[421,84.78,0.0],[422,32.86,0.0],[423,50.91,0.25],[424,44.3,1.13],[425,80.16,0.53],[426,45.58,0.0],[427,46.46,1.69],[428,58.69,4.58],[429,43.75,1.4],[430,48.8,0.0],[431,55.05,5.94],[432,55.23,2.64],[433,16.22,0.51],[434,52.63,2.02],[435,32.71,3.5],[436,36.16,4.3],[437,64.31,0.25],[438,72.68,4.92],[439,60.88,4.8],[440,42.85,0.82],[441,54.39,2.94],[442,50.36,2.51],[443,31.01,2.88],[444,67.27,1.95],[445,31.21,1.26],[446,44.71,0.0],[447,56.67,6.08],[448,38.36,3.86],[449,50.52,1.59],[450,18.34,0.0],[451,42.42,3.44],[452,40.67,0.0],[453,64.61,2.41],[454,55.46,1.9],[455,28.69,2.23],[456,41.21,0.52],[457,29.72,2.45],[458,59.32,4.19],[459,65.25,0.29],[460,84.94,1.41],[461,88.38,1.55],[462,24.83,2.61],[463,20.94,1.28],[464,36.42,2.57],[465,33.33,5.13],[466,73.8,0.0],[467,15.41,1.12],[468,44.74,0.15],[469,28.26,3.43],[470,72.52,2.94],[471,43.92,3.39],[472,77.59,0.4],[473,44.84,0.41],[474,43.69,1.96],[475,78.05,1.22],[476,37.68,2.71],[477,48.4,4.91],[478,74.42,1.34],[479,47.78,1.86],[480,57.63,5.44],[481,39.89,2.51],[482,29.67,4.68],[483,49.11,1.88],[484,44.98,3.2],[485,56.8,6.81],[486,42.91,0.83],[487,36.08,0.0],[488,60.54,5.86],[489,33.39,3.32],[490,45.53,3.0],[491,43.27,9.14],[492,43.78,5.33],[493,49.52,2.23],[494,64.17,5.91],[495,26.61,5.19],[496,29.06,0.0],[497,79.91,2.64],[498,51.47,4.21],[499,52.94,2.49],[500,42.4,1.6],[501,89.26,3.77],[502,29.36,0.0],[503,55.42,5.82],[504,77.85,8.85],[505,83.12,9.77],[506,59.96,0.55],[507,36.6,3.46],[508,53.95,1.95],[509,38.66,0.0],[510,41.08,1.81],[511,69.12,8.1],[512,47.08,0.16],[513,50.57,0.0],[514,57.46,0.0],[515,21.89,4.65],[516,36.34,5.05],[517,42.68,0.89],[518,58.19,2.17],[519,56.64,6.71],[520,60.83,0.06],[521,62.42,3.61],[522,81.0,0.0],[523,39.63,3.92],[524,68.82,5.32],[525,64.33,0.94],[526,55.68,0.84],[527,85.64,1.29],[528,45.78,0.0],[529,71.25,0.53],[530,103.45,1.75],[531,68.12,4.16],[532,46.31,0.0],[533,63.96,1.82],[534,41.72,1.51],[535,37.27,2.89],[536,49.94,8.05],[537,35.62,6.11],[538,20.11,0.0],[539,41.18,1.66],[540,25.22,3.02],[541,37.65,0.83],[542,44.72,1.41],[543,47.74,0.0],[544,69.3,3.14],[545,56.54,7.22],[546,29.49,2.71],[547,38.54,5.65],[548,45.8,5.41],[549,53.92,2.02],[550,52.06,1.95],[551,58.66,2.34],[552,81.63,1.02],[553,51.34,4.18],[554,57.64,0.93],[555,52.81,5.32],[556,54.26,2.31],[557,77.7,2.1],[558,17.76,4.04],[559,29.45,1.46],[560,23.5,0.0],[561,38.02,0.83],[562,59.26,2.87],[563,42.69,0.0],[564,39.56,3.9],[565,40.77,7.31],[566,51.77,1.19],[567,21.78,9.34],[568,62.76,2.37],[569,36.21,2.88],[570,35.81,2.1],[571,60.5,0.0],[572,57.96,0.0],[573,47.33,2.53],[574,66.21,0.03],[575,56.77,4.13],[576,51.15,1.56],[577,111.28,5.34],[578,65.13,2.76],[579,17.17,2.84],[580,49.8,0.61],[581,57.98,0.42],[582,46.94,2.06],[583,51.69,1.71],[584,70.94,5.3],[585,8.31,0.0],[586,42.99,0.0],[587,59.87,0.21],[588,77.78,1.16],[589,44.88,0.0],[590,52.16,2.7],[591,64.11,7.3],[592,43.3,3.4],[593,94.59,3.51],[594,43.48,1.62],[595,57.81,4.09],[596,65.14,1.93],[597,51.44,4.38],[598,68.14,0.97],[599,29.84,7.22],[600,37.14,7.02],[601,33.96,0.0],[602,53.89,1.03],[603,43.59,4.98],[604,30.1,7.28],[605,56.89,0.0],[606,66.6,0.26],[607,65.91,4.48],[608,34.15,7.96],[609,88.11,2.65],[610,63.99,3.99],[611,71.97,0.0],[612,74.43,2.7],[613,26.51,0.0],[614,67.58,0.55],[615,10.05,1.73],[616,24.74,0.0],[617,38.88,5.04],[618,66.54,0.6],[619,65.0,3.13],[620,34.93,0.0],[621,80.31,0.0],[622,70.9,1.14],[623,32.8,0.72],[624,74.53,2.43],[625,45.93,1.73],[626,30.42,1.83],[627,33.81,6.56],[628,43.83,0.0],[629,57.96,0.0],[630,36.08,5.34],[631,59.22,2.23],[632,45.49,4.75],[633,52.99,2.51],[634,65.61,1.79],[635,41.02,3.46],[636,73.06,2.72],[637,28.69,2.14],[638,34.45,2.91],[639,33.27,1.56],[640,61.14,8.06],[641,74.77,4.19],[642,40.28,2.74],[643,59.15,2.29],[644,93.9,1.02],[645,64.11,6.52],[646,30.08,0.0],[647,48.57,3.12],[648,27.48,3.3],[649,60.03,0.97],[650,47.34,4.54],[651,89.92,0.0],[652,46.35,0.21],[653,26.83,3.58],[654,49.76,1.88],[655,61.74,2.9],[656,58.15,2.79],[657,63.88,0.0],[658,55.74,1.34],[659,50.86,0.69],[660,50.17,2.33],[661,42.65,1.88],[662,90.36,4.93],[663,46.97,0.0],[664,83.49,2.26],[665,46.67,1.69],[666,99.12,6.23],[667,63.71,1.93],[668,19.76,0.0],[669,38.29,0.48],[670,29.93,4.37],[671,15.08,1.92],[672,42.88,4.07],[673,47.01,0.0],[674,46.99,0.0],[675,36.78,2.09],[676,66.22,2.16],[677,23.37,2.67],[678,80.24,3.08],[679,47.75,0.41],[680,39.5,1.1],[681,44.64,3.89],[682,40.2,2.62],[683,41.14,0.0],[684,36.55,4.06],[685,58.78,1.39],[686,41.73,3.16],[687,72.99,2.62],[688,53.45,1.23],[689,30.35,0.89],[690,63.78,4.85],[691,35.72,2.43],[692,57.93,3.99],[693,32.52,0.0],[694,43.94,6.51],[695,53.97,3.98],[696,23.68,0.0],[697,51.52,1.69],[698,17.85,3.43],[699,37.64,9.66],[700,47.34,0.59],[701,72.19,1.71],[702,65.64,0.96],[703,70.87,3.27],[704,54.03,0.58],[705,66.49,0.63],[706,55.21,4.86],[707,47.99,0.0],[708,43.36,1.02],[709,16.62,6.65],[710,66.97,0.0],[711,68.21,2.67],[712,41.04,1.16],[713,45.26,0.23],[714,76.66,4.13],[715,20.73,1.1],[716,65.92,2.32],[717,45.77,0.1],[718,45.15,2.84],[719,45.54,2.42],[720,53.0,2.78],[721,45.83,7.44],[722,38.12,0.0],[723,21.1,3.84],[724,24.72,3.14],[725,55.18,0.0],[726,59.34,2.29],[727,64.07,0.96],[728,67.11,4.02],[729,40.66,3.99],[730,58.26,4.56],[731,55.63,0.0],[732,82.87,0.59],[733,25.35,3.67],[734,55.13,7.63],[735,77.2,3.41],[736,37.09,2.02],[737,36.2,0.0],[738,60.71,0.0],[739,67.39,1.1],[740,20.81,1.89],[741,54.97,2.1],[742,36.45,1.86],[743,39.88,3.16],[744,32.53,1.72],[745,45.44,3.85],[746,60.8,1.49],[747,41.08,0.0],[748,87.05,5.37],[749,43.43,0.0],[750,78.97,4.81],[751,53.03,0.0],[752,38.47,0.06],[753,33.27,1.33],[754,52.46,3.03],[755,58.24,0.94],[756,33.32,2.27],[757,63.82,0.0],[758,28.88,0.0],[759,41.1,1.06],[760,41.04,0.09],[761,42.66,4.65],[762,55.3,1.12],[763,33.18,0.0],[764,77.25,0.0],[765,58.33,2.52],[766,51.88,5.38],[767,64.98,1.07],[768,22.85,6.28],[769,56.78,2.87],[770,46.4,4.32],[771,57.08,6.08],[772,48.76,5.58],[773,46.95,0.0],[774,53.14,4.59],[775,74.1,0.0],[776,77.2,3.25],[777,61.46,0.79],[778,65.87,2.16],[779,17.89,2.69],[780,73.68,2.12],[781,55.33,6.33],[782,41.99,0.5],[783,44.94,1.86],[784,86.01,8.83],[785,53.9,0.0],[786,62.97,1.69],[787,66.68,2.49],[788,55.72,3.0],[789,58.68,0.0],[790,70.89,2.49],[791,48.55,2.62],[792,47.77,0.0],[793,38.73,1.12],[794,63.03,0.68],[795,61.48,2.16],[796,67.49,3.62],[797,28.09,6.42],[798,65.33,4.04],[799,83.4,0.0],[800,57.99,0.0],[801,48.31,1.51],[802,74.37,3.96],[803,61.37,0.09],[804,79.74,2.99],[805,54.6,3.57],[806,18.32,4.31],[807,36.26,6.63],[808,83.06,4.03],[809,62.52,6.5],[810,58.96,5.44],[811,78.16,0.0],[812,75.72,0.0],[813,52.11,0.0],[814,40.64,0.0],[815,43.93,0.0],[816,43.13,0.0],[817,57.79,0.0],[818,46.67,0.0],[819,58.21,2.05],[820,71.59,5.61],[821,44.12,1.96],[822,53.71,5.18],[823,33.53,2.93],[824,35.17,1.72],[825,16.65,4.66],[826,58.62,2.2],[827,53.97,0.0],[828,61.97,6.78],[829,36.19,8.62],[830,32.91,5.33],[831,66.41,1.32],[832,55.94,3.18],[833,34.06,2.81],[834,68.01,3.66],[835,31.84,0.76],[836,39.75,5.23],[837,39.19,2.55],[838,39.91,5.27],[839,72.64,2.04],[840,21.37,0.0],[841,37.21,2.13],[842,75.65,5.62],[843,53.3,0.0],[844,43.51,1.14],[845,51.11,9.06],[846,55.65,2.89],[847,60.09,3.83],[848,29.24,2.86],[849,21.65,6.3],[850,56.33,0.24],[851,57.0,1.34],[852,46.19,2.23],[853,35.01,0.0],[854,31.5,1.28],[855,46.2,4.28],[856,56.97,0.0],[857,57.88,1.3],[858,56.21,0.59],[859,56.73,3.71],[860,37.46,2.07],[861,28.65,0.0],[862,77.96,0.51],[863,34.26,0.0],[864,53.2,0.0],[865,44.69,4.46],[866,47.25,4.98],[867,68.64,0.0],[868,31.86,1.19],[869,72.65,0.5],[870,50.94,0.75],[871,50.54,0.0],[872,30.27,5.01],[873,72.78,5.66],[874,50.22,7.13],[875,39.88,2.27],[876,37.83,4.13],[877,45.55,8.65],[878,40.74,3.87],[879,41.95,0.0],[880,43.7,0.0],[881,54.91,1.12],[882,51.04,4.14],[883,28.66,0.0],[884,66.93,4.74],[885,31.7,3.09],[886,84.99,1.57],[887,31.87,4.3],[888,47.73,7.1],[889,45.49,5.43],[890,34.56,0.8],[891,59.45,0.0],[892,52.28,1.04],[893,47.93,0.45],[894,40.23,4.89],[895,45.6,2.03],[896,65.22,0.53],[897,43.41,2.0],[898,51.06,0.0],[899,58.7,0.0],[900,57.97,0.82],[901,68.53,1.84],[902,36.27,1.17],[903,71.94,0.49],[904,58.27,5.12],[905,37.7,0.0],[906,35.87,2.23],[907,81.36,4.15],[908,46.05,2.32],[909,70.62,0.8],[910,42.72,1.9],[911,31.64,0.0],[912,75.16,0.11],[913,46.13,0.0],[914,56.62,4.13],[915,40.14,3.14],[916,85.95,0.0],[917,29.72,3.51],[918,85.13,4.75],[919,60.01,3.97],[920,30.95,3.02],[921,49.98,2.39],[922,27.47,6.03],[923,40.42,3.99],[924,45.74,2.17],[925,44.24,1.17],[926,77.79,0.0],[927,92.73,2.28],[928,54.94,2.94],[929,38.88,4.45],[930,73.97,3.9],[931,33.5,2.93],[932,46.3,2.38],[933,56.4,0.64],[934,66.05,7.3],[935,98.22,3.7],[936,43.42,3.18],[937,70.74,0.0],[938,75.85,5.2],[939,50.52,0.0],[940,55.59,4.23],[941,81.03,2.13],[942,45.68,0.71],[943,73.8,0.78],[944,68.77,0.0],[945,73.67,1.75],[946,51.64,1.99],[947,74.88,0.68],[948,70.04,3.75],[949,54.27,0.0],[950,75.49,5.67],[951,50.18,4.26],[952,25.12,1.43],[953,62.04,3.55],[954,39.41,2.94],[955,24.78,0.0],[956,38.91,0.0],[957,12.93,5.43],[958,52.67,1.8],[959,57.66,3.62],[960,95.19,2.75],[961,78.66,2.35],[962,75.6,2.09],[963,32.82,4.09],[964,53.97,7.06],[965,54.5,0.0],[966,60.6,5.48],[967,73.3,0.0],[968,67.52,0.0],[969,21.81,3.57],[970,61.33,3.01],[971,43.88,0.0],[972,52.04,0.0],[973,53.66,0.13],[974,90.7,8.47],[975,55.12,0.52],[976,54.78,4.12],[977,51.93,3.6],[978,33.14,3.15],[979,56.35,5.71],[980,61.37,2.58],[981,59.67,0.99],[982,100.84,4.28],[983,48.85,2.89],[984,41.77,0.0],[985,49.44,4.22],[986,56.92,5.02],[987,64.19,0.0],[988,28.2,1.96],[989,47.16,0.04],[990,79.01,0.0],[991,58.16,0.99],[992,64.32,5.29],[993,48.93,5.29],[994,62.21,5.3],[995,44.43,4.43],[996,68.85,4.07],[997,32.53,3.46],[998,52.07,0.0],[999,65.21,0.19],[1000,55.9,1.08]];
+
+const MC8  = MC_DATA.map(r=>({iter:r[0],val:r[1]}));
+const MC15 = MC_DATA.map(r=>({iter:r[0],val:r[2]}));
+
+// ── TABLE ENGINE ──────────────────────────────────────────────────────
+const PS=16;
+const TS={
+  t8: {p:1,q:'',f:'all',data:P8,type:'patient'},
+  t15:{p:1,q:'',f:'all',data:P15,type:'patient'},
+  tmc8: {p:1,q:'',f:'all',data:MC8,type:'mc'},
+  tmc15:{p:1,q:'',f:'all',data:MC15,type:'mc'}
+};
+
+function applyF(k){
+  const sfx=k==='t8'?'8':k==='t15'?'15':k==='tmc8'?'mc8':'mc15';
+  const qi=document.getElementById((k==='t8'?'s8':k==='t15'?'s15':k==='tmc8'?'mc8':'mc15')+'q');
+  const fi=document.getElementById((k==='t8'?'s8':k==='t15'?'s15':k==='tmc8'?'mc8':'mc15')+'f');
+  if(qi)TS[k].q=qi.value.trim();
+  if(fi)TS[k].f=fi.value;
+  TS[k].p=1;
+  renderT(k);
+}
+function goPage(k,p){TS[k].p=p;renderT(k);}
+
+function renderT(k){
+  const st=TS[k];
+  const tbId='tb'+k.replace('t','');
+  const pgId='pg'+k.replace('t','');
+  let rows=st.data;
+
+  if(st.type==='patient'){
+    if(st.q) rows=rows.filter(r=>String(r.id).includes(st.q));
+    if(st.f==='ok')   rows=rows.filter(r=>r.wait<=5);
+    if(st.f==='fail') rows=rows.filter(r=>r.wait>5);
+  } else {
+    if(st.q) rows=rows.filter(r=>String(r.iter).includes(st.q));
+    if(st.f==='ok')   rows=rows.filter(r=>r.val<=5);
+    if(st.f==='fail') rows=rows.filter(r=>r.val>5);
+  }
+
+  const total=rows.length;
+  const pages=Math.max(1,Math.ceil(total/PS));
+  if(st.p>pages)st.p=pages;
+  const slice=rows.slice((st.p-1)*PS, st.p*PS);
+  const maxW=st.type==='patient'?Math.max(...st.data.map(r=>r.wait)):Math.max(...st.data.map(r=>r.val));
+
+  const tb=document.getElementById(tbId);
+  if(!tb)return;
+  if(st.type==='patient'){
+    const lkLabel=(w)=>w===0?'Dilayani':'Menunggu';
+    const lkCls=(w)=>w===0?'bserved':'bwait';
+    tb.innerHTML=slice.map(r=>{
+      const wc=r.wait>5?'#B8301F':r.wait>0?'#A85200':'#1C7539';
+      const bp=Math.round((r.wait/maxW)*100);
+      const rc=r.wait>5?' class="rdanger"':'';
+      return`<tr${rc}><td class="mono" style="font-weight:600">#${r.id}</td><td class="mono">${r.arr.toFixed(2)}</td><td class="mono">${r.svc.toFixed(2)}</td>
+      <td><div class="wbar"><span class="mono" style="min-width:40px;font-weight:700;color:${wc}">${r.wait.toFixed(2)}</span>
+      <div class="wbg"><div class="wfill" style="width:${bp}%;background:${wc}"></div></div></div></td>
+      <td><span class="badge ${lkCls(r.wait)}">${lkLabel(r.wait)}</span></td>
+      <td><span class="badge ${r.wait<=5?'bslaok':'bslafail'}">${r.wait<=5?'Dalam Batas SLA':'Melampaui SLA'}</span></td></tr>`;
+    }).join('');
+  } else {
+    tb.innerHTML=slice.map(r=>{
+      const wc=r.val>5?'#B8301F':'#1C7539';
+      const bp=Math.round((r.val/maxW)*100);
+      const diff=+(r.val-5).toFixed(2);
+      const rc=r.val>5?' class="rdanger"':'';
+      return`<tr${rc}><td class="mono" style="font-weight:600">${r.iter}</td>
+      <td><div class="wbar"><span class="mono" style="min-width:44px;font-weight:700;color:${wc}">${r.val.toFixed(2)}</span>
+      <div class="wbg"><div class="wfill" style="width:${bp}%;background:${wc}"></div></div></div></td>
+      <td><span class="badge ${r.val<=5?'bslaok':'bslafail'}">${r.val<=5?'&#10003; Lulus SLA':'&#10007; Gagal SLA'}</span></td>
+      <td class="mono" style="color:${diff>0?'#B8301F':'#1C7539'};font-weight:600">${diff>0?'+'+diff.toFixed(2):diff.toFixed(2)}</td></tr>`;
+    }).join('');
+  }
+
+  const pg=document.getElementById(pgId);
+  if(!pg)return;
+  pg.innerHTML=`<span class="pinfo">Menampilkan ${Math.min((st.p-1)*PS+1,total)}&ndash;${Math.min(st.p*PS,total)} dari ${total} baris</span>`;
+  const maxP=7,s=Math.max(1,st.p-3),e=Math.min(pages,s+maxP-1);
+  if(s>1)pg.innerHTML+=`<button class="pbtn" onclick="goPage('${k}',1)">&laquo;</button>`;
+  for(let i=s;i<=e;i++)pg.innerHTML+=`<button class="pbtn${i===st.p?' active':''}" onclick="goPage('${k}',${i})">${i}</button>`;
+  if(e<pages)pg.innerHTML+=`<button class="pbtn" onclick="goPage('${k}',${pages})">&raquo;</button>`;
+}
+
+// ── CHART REGISTRY ───────────────────────────────────────────────────
+const CR={};
+const chartCfg={responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{}}},
+  scales:{x:{ticks:{color:'#9A9790',font:{size:10}},grid:{display:false}},
+          y:{ticks:{color:'#9A9790',font:{size:10}},grid:{color:'#E8E5DF'}}}};
+
+function mk(id,type,data,opts={}){
+  if(CR[id]){CR[id].destroy();}
+  const el=document.getElementById(id);
+  if(!el)return;
+  CR[id]=new Chart(el,{type,data,options:{...chartCfg,...opts,
+    plugins:{...chartCfg.plugins,...(opts.plugins||{})},
+    scales:{...chartCfg.scales,...(opts.scales||{})}}});
+}
+
+const slaLine={id:'slaLine',afterDraw(chart){
+  const{ctx,chartArea:{top,bottom,left,right},scales:{y}}=chart;
+  if(!y||!y.getPixelForValue)return;
+  const py=y.getPixelForValue(5);
+  if(py<top||py>bottom)return;
+  ctx.save();ctx.strokeStyle='#F59E0B';ctx.lineWidth=1.5;
+  ctx.setLineDash([5,4]);ctx.beginPath();
+  ctx.moveTo(left,py);ctx.lineTo(right,py);ctx.stroke();
+  ctx.fillStyle='#A85200';ctx.font='10px Inter';
+  ctx.fillText('SLA 5 mnt',right-52,py-4);ctx.restore();
+}};
+Chart.register(slaLine);
+
+function buildS8(){
+  if(CR['c8bar'])return;
+  const ws=P8.map(p=>p.wait);
+  mk('c8bar','bar',{labels:P8.map(p=>'#'+p.id),datasets:[{data:ws,
+    backgroundColor:ws.map(w=>w>5?'#B8301F':'#1A5C9E'),borderWidth:0,borderRadius:1}]},{
+    plugins:{tooltip:{callbacks:{title:i=>'Pasien '+i[0].label,label:i=>i.raw.toFixed(2)+' menit'}}},
+    scales:{x:{ticks:{maxTicksLimit:14,color:'#9A9790',font:{size:9}},grid:{display:false}},
+            y:{title:{display:true,text:'Menit',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  mk('c8sct','scatter',{datasets:[{data:P8.map(p=>({x:p.id,y:p.wait})),
+    backgroundColor:ws.map(w=>w>5?'#B8301F88':'#1A5C9E88'),pointRadius:3,pointHoverRadius:5}]},{
+    scales:{x:{title:{display:true,text:'Urutan Pasien',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}},
+            y:{title:{display:true,text:'Menit',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+}
+function buildS15(){
+  if(CR['c15bar'])return;
+  const ws=P15.map(p=>p.wait);
+  mk('c15bar','bar',{labels:P15.map(p=>'#'+p.id),datasets:[{data:ws,
+    backgroundColor:ws.map(w=>w>5?'#B8301F':w>0?'#A85200':'#1C7539'),borderWidth:0,borderRadius:1}]},{
+    plugins:{tooltip:{callbacks:{title:i=>'Pasien '+i[0].label,label:i=>i.raw.toFixed(2)+' menit'}}},
+    scales:{x:{ticks:{maxTicksLimit:14,color:'#9A9790',font:{size:9}},grid:{display:false}},
+            y:{max:6,title:{display:true,text:'Menit',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  mk('c15sct','scatter',{datasets:[{data:P15.map(p=>({x:p.id,y:p.wait})),
+    backgroundColor:ws.map(w=>w>5?'#B8301F':'#1C753988'),pointRadius:3,pointHoverRadius:5}]},{
+    scales:{x:{title:{display:true,text:'Urutan Pasien',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}},
+            y:{max:6,title:{display:true,text:'Menit',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+}
+function buildMC8(){
+  if(CR['cmc8hist'])return;
+  const labs=["0\u201310", "10\u201320", "20\u201330", "30\u201340", "40\u201350", "50\u201360", "60\u201370", "70\u201380", "80\u201390", "90\u2013100", "100+"];
+  const c=[1, 24, 77, 165, 211, 221, 139, 105, 37, 16, 4];
+  mk('cmc8hist','bar',{labels:labs,datasets:[{data:c,backgroundColor:'#B8301F',borderWidth:0,borderRadius:2}]},{
+    plugins:{tooltip:{callbacks:{label:i=>i.raw+' iterasi'}}},
+    scales:{x:{title:{display:true,text:'Max Tunggu (menit)',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790',maxRotation:35}},
+            y:{title:{display:true,text:'Frekuensi',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  const step=5;
+  const smc8=MC8.filter((_,i)=>i%step===0);
+  mk('cmc8line','line',{labels:smc8.map(r=>r.iter),datasets:[
+    {data:smc8.map(r=>r.val),borderColor:'#B8301F',backgroundColor:'#B8301F22',fill:true,borderWidth:1.5,pointRadius:0,tension:.3},
+    {data:smc8.map(()=>5),borderColor:'#F59E0B',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,label:'SLA'}
+  ]},{
+    plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'Iterasi '+i[0].label,label:i=>i.dataset.label==='SLA'?'SLA: 5 mnt':i.raw.toFixed(2)+' mnt'}}},
+    scales:{x:{ticks:{maxTicksLimit:10,color:'#9A9790',font:{size:10}},grid:{display:false}},
+            y:{title:{display:true,text:'Max Tunggu (mnt)',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+}
+function buildMC15(){
+  if(CR['cmc15hist'])return;
+  const labs=["0\u20131", "1\u20132", "2\u20133", "3\u20134", "4\u20135", "5\u20136", "6\u20137", "7\u20138", "8\u20139", "9+"];
+  const c=[328, 145, 169, 128, 86, 64, 35, 24, 12, 9];
+  mk('cmc15hist','bar',{labels:labs,datasets:[{data:c,
+    backgroundColor:['#1C7539','#1C7539','#1C7539','#1C7539','#1C7539','#B8301F','#B8301F','#B8301F','#B8301F','#B8301F'],
+    borderWidth:0,borderRadius:2}]},{
+    plugins:{tooltip:{callbacks:{label:i=>i.raw+' iterasi'}}},
+    scales:{x:{title:{display:true,text:'Max Tunggu (menit)',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790',maxRotation:35}},
+            y:{title:{display:true,text:'Frekuensi',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  const step=5;
+  const smc15=MC15.filter((_,i)=>i%step===0);
+  mk('cmc15line','line',{labels:smc15.map(r=>r.iter),datasets:[
+    {data:smc15.map(r=>r.val),borderColor:'#1C7539',backgroundColor:'#1C753922',fill:true,borderWidth:1.5,pointRadius:0,tension:.3},
+    {data:smc15.map(()=>5),borderColor:'#F59E0B',borderDash:[4,4],borderWidth:1.5,pointRadius:0,fill:false,label:'SLA'}
+  ]},{
+    plugins:{legend:{display:false}},
+    scales:{x:{ticks:{maxTicksLimit:10,color:'#9A9790',font:{size:10}},grid:{display:false}},
+            y:{title:{display:true,text:'Max Tunggu (mnt)',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+}
+function buildCmp(){
+  if(CR['ccmpavg'])return;
+  mk('ccmpavg','bar',{labels:['8 Dokter','15 Dokter','Ambang SLA'],
+    datasets:[{data:[26.31,0.35,5],backgroundColor:['#B8301F','#1C7539','#1A5C9E'],borderWidth:0,borderRadius:4}]},{
+    plugins:{tooltip:{callbacks:{label:i=>i.raw+' menit'}}},
+    scales:{x:{ticks:{color:'#9A9790'},grid:{display:false}},
+            y:{title:{display:true,text:'Menit',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  mk('ccmprho','bar',{labels:['8 Dokter (&rho;=1.25)','15 Dokter (&rho;=0.67)'],
+    datasets:[{data:[1.25,0.84,0.67],backgroundColor:['#B8301F','#A85200','#1C7539'],borderWidth:0,borderRadius:4,indexAxis:'y'}]},{
+    indexAxis:'y',
+    plugins:{tooltip:{callbacks:{label:i=>'&rho; = '+i.raw}}},
+    scales:{y:{ticks:{color:'#9A9790'}},
+            x:{max:1.4,title:{display:true,text:'Utilisasi &rho; (< 1 = stabil)',color:'#9A9790',font:{size:10}},ticks:{color:'#9A9790'}}}});
+  const labs8=["0\u201310", "10\u201320", "20\u201330", "30\u201340", "40\u201350", "50\u201360", "60\u201370", "70\u201380", "80\u201390", "90\u2013100", "100+"];
+  const c8a=[1, 24, 77, 165, 211, 221, 139, 105, 37, 16, 4];
+  const labs15=["0\u20131", "1\u20132", "2\u20133", "3\u20134", "4\u20135", "5\u20136", "6\u20137", "7\u20138", "8\u20139", "9+"];
+  const c15a=[328, 145, 169, 128, 86, 64, 35, 24, 12, 9];
+  mk('ccmpoverlap','bar',{
+    labels:labs8,
+    datasets:[
+      {label:'8 Dokter',data:c8a,backgroundColor:'#B8301F88',borderWidth:0,borderRadius:2},
+      {label:'15 Dokter',data:c15a.concat(Array(Math.max(0,labs8.length-c15a.length)).fill(0)),backgroundColor:'#1C753988',borderWidth:0,borderRadius:2}
+    ]},{
+    plugins:{legend:{display:true,position:'top',labels:{color:'#6A6760',font:{size:11}}}},
+    scales:{x:{ticks:{color:'#9A9790',maxRotation:35}},y:{ticks:{color:'#9A9790'},title:{display:true,text:'Frekuensi',color:'#9A9790',font:{size:10}}}}});
+  mk('ccmppie','doughnut',{
+    labels:['8 Dok Gagal (100.0%)','15 Dok Lulus (85.7%)','15 Dok Gagal (14.3%)'],
+    datasets:[{data:[1000,857,143],backgroundColor:['#B8301F','#1C7539','#A85200'],borderWidth:2,borderColor:'#fff'}]},{
+    plugins:{legend:{display:true,position:'bottom',labels:{color:'#6A6760',font:{size:11},padding:10}}},
+    scales:{}});
+}
+
+// ── TAB SWITCHING ────────────────────────────────────────────────────
+const TABS=['s8','s15','mc8','mc15','cmp'];
+function setTab(id){
+  TABS.forEach(t=>{
+    const el=document.getElementById(t);
+    if(el)el.classList.toggle('hidden',t!==id);
+  });
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    b.classList.toggle('active',TABS[i]===id);
+  });
+  if(id==='s8'){buildS8();}
+  if(id==='s15'){buildS15();}
+  if(id==='mc8'){buildMC8();renderT('tmc8');}
+  if(id==='mc15'){buildMC15();renderT('tmc15');}
+  if(id==='cmp'){buildCmp();}
+}
+
+// ── INIT ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  renderT('t8');renderT('t15');
+  renderT('tmc8');renderT('tmc15');
+  buildS8();
+});
+</script>
+
+</body>
+</html>
